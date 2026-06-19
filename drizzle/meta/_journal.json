@@ -1,0 +1,27 @@
+{
+  "version": "7",
+  "dialect": "mysql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "5",
+      "when": 1781846864904,
+      "tag": "0000_many_terrax",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "5",
+      "when": 1781850351098,
+      "tag": "0001_rapid_earthquake",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1781852607473,
+      "tag": "0002_peaceful_thena",
+      "breakpoints": true
+    }
+  ]
+}
