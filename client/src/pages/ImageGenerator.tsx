@@ -4,6 +4,7 @@ import { Wand2, Download, Loader, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
+import { trpc } from "@/lib/trpc";
 
 const STYLE_PRESETS = [
   { id: "realistic", label: "واقعي", labelEn: "Realistic" },
@@ -20,9 +21,22 @@ export default function ImageGenerator() {
   const [isArabic, setIsArabic] = useState(true);
   const [prompt, setPrompt] = useState("");
   const [selectedStyle, setSelectedStyle] = useState("realistic");
-  const [isGenerating, setIsGenerating] = useState(false);
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const [variations, setVariations] = useState<string[]>([]);
+
+  const generateMutation = trpc.imageGeneration.generate.useMutation({
+    onSuccess: (data) => {
+      setGeneratedImage(data.imageUrl || null);
+      // For now, we use the same image as a variation placeholder
+      if (data.imageUrl) {
+        setVariations([data.imageUrl]);
+      }
+      toast.success(isArabic ? "تم توليد الصورة بنجاح" : "Image generated successfully");
+    },
+    onError: (error) => {
+      toast.error(error.message);
+    },
+  });
 
   const handleGenerate = async () => {
     if (!prompt.trim()) {
@@ -30,29 +44,13 @@ export default function ImageGenerator() {
       return;
     }
 
-    setIsGenerating(true);
-    try {
-      // Simulate API call to generate image
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-
-      // Mock generated image (in production, this would be from the API)
-      const mockImageUrl = `https://via.placeholder.com/512x512?text=${encodeURIComponent(prompt)}`;
-      setGeneratedImage(mockImageUrl);
-
-      // Generate 3 variations
-      setVariations([
-        mockImageUrl,
-        mockImageUrl,
-        mockImageUrl,
-      ]);
-
-      toast.success(isArabic ? "تم توليد الصورة بنجاح" : "Image generated successfully");
-    } catch (error) {
-      toast.error(isArabic ? "حدث خطأ في توليد الصورة" : "Error generating image");
-    } finally {
-      setIsGenerating(false);
-    }
+    generateMutation.mutate({
+      prompt,
+      style: selectedStyle,
+    });
   };
+
+  const isGenerating = generateMutation.isPending;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#0A0A0A] via-[#1a1a2e] to-[#0A0A0A] py-12 px-4">

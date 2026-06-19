@@ -19,6 +19,8 @@ import {
   InsertPayment,
   reviews,
   InsertReview,
+  monitoringJobs,
+  InsertMonitoringJob,
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -251,4 +253,23 @@ export async function getReviews() {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   return db.select().from(reviews).where(eq(reviews.isVerified, 1)).orderBy(reviews.createdAt);
+}
+
+// Monitoring Jobs
+export async function getMonitoringJobs() {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return db.select().from(monitoringJobs).orderBy(monitoringJobs.createdAt);
+}
+
+export async function createMonitoringJob(job: InsertMonitoringJob) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return db.insert(monitoringJobs).values(job);
+}
+
+export async function updateMonitoringJob(jobId: number, updates: Partial<InsertMonitoringJob>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return db.update(monitoringJobs).set(updates).where(eq(monitoringJobs.id, jobId));
 }

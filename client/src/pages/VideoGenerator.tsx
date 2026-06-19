@@ -4,6 +4,7 @@ import { Film, Loader, Download, Clock, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
+import { trpc } from "@/lib/trpc";
 
 const VIDEO_TEMPLATES = [
   { id: "promo", label: "فيديو ترويجي", labelEn: "Promo Video", duration: "30s", credits: 50 },
@@ -24,6 +25,19 @@ export default function VideoGenerator() {
 
   const selectedTemplateData = VIDEO_TEMPLATES.find((t) => t.id === selectedTemplate);
 
+  const generateMutation = trpc.videoGeneration.generate.useMutation({
+    onSuccess: (data) => {
+      setProgress(100);
+      setGeneratedVideo(data.videoUrl || null);
+      toast.success(data.message || (isArabic ? "تم بدء توليد الفيديو" : "Video generation started"));
+    },
+    onError: (error) => {
+      toast.error(error.message);
+      setIsGenerating(false);
+      setProgress(0);
+    },
+  });
+
   const handleGenerate = async () => {
     if (!script.trim()) {
       toast.error(isArabic ? "يرجى إدخال نص الفيديو" : "Please enter video script");
@@ -33,22 +47,21 @@ export default function VideoGenerator() {
     setIsGenerating(true);
     setProgress(0);
 
-    try {
-      // Simulate video generation with progress
-      for (let i = 0; i <= 100; i += 10) {
-        await new Promise((resolve) => setTimeout(resolve, 300));
-        setProgress(i);
-      }
+    // Simulate progress while waiting for API
+    const interval = setInterval(() => {
+      setProgress((prev) => {
+        if (prev >= 90) {
+          clearInterval(interval);
+          return 90;
+        }
+        return prev + 2;
+      });
+    }, 1000);
 
-      // Mock video URL
-      setGeneratedVideo("https://via.placeholder.com/1280x720?text=Video+Generated");
-      toast.success(isArabic ? "تم توليد الفيديو بنجاح" : "Video generated successfully");
-    } catch (error) {
-      toast.error(isArabic ? "حدث خطأ في توليد الفيديو" : "Error generating video");
-    } finally {
-      setIsGenerating(false);
-      setProgress(0);
-    }
+    generateMutation.mutate({
+      script,
+      template: selectedTemplate,
+    });
   };
 
   return (

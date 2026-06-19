@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { ChevronDown, Mail, Phone, MapPin, Zap, Palette, Film, Sparkles, BarChart3, Lock, Code2, Users, TrendingUp } from "lucide-react";
 import PortfolioGallery from "@/components/PortfolioGallery";
+import { AIChatBox, Message } from "@/components/AIChatBox";
 
 const SERVICES = [
   {
@@ -97,6 +98,30 @@ export default function Home() {
     e.preventDefault();
     setIsSubmitting(true);
     await submitInquiry.mutateAsync(formData);
+  };
+
+  const [chatMessages, setChatMessages] = useState<Message[]>([
+    {
+      role: "assistant",
+      content: isArabic
+        ? "مرحباً بك في Pixel & Reel Studio! أنا مساعدك الذكي. كيف يمكنني مساعدتك في مشروعك الإبداعي اليوم؟"
+        : "Welcome to Pixel & Reel Studio! I'm your AI assistant. How can I help you with your creative project today?",
+    },
+  ]);
+
+  const chatMutation = trpc.aiAssistant.chat.useMutation({
+    onSuccess: (response) => {
+      setChatMessages((prev) => [...prev, { role: "assistant", content: response }]);
+    },
+    onError: (error) => {
+      toast.error(error.message);
+    },
+  });
+
+  const handleSendMessage = (content: string) => {
+    const newMessages = [...chatMessages, { role: "user", content } as Message];
+    setChatMessages(newMessages);
+    chatMutation.mutate({ messages: newMessages });
   };
 
   const scrollToSection = (id: string) => {
@@ -244,37 +269,47 @@ export default function Home() {
         </div>
       </section>
 
-      {/* AI Customer Support Section */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-4xl mx-auto">
-          <motion.h2
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            transition={{ duration: 0.8 }}
-            className="text-4xl font-bold text-center mb-12 bg-gradient-to-r from-[#FF006E] to-[#00D9FF] bg-clip-text text-transparent"
-          >
-            {isArabic ? "دعم العملاء الذكي" : "AI-Powered Customer Support"}
-          </motion.h2>
-
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.8 }}
-            className="bg-[#1A1A1A] border border-[#2A2A2A] rounded-lg p-8"
-          >
-            <p className="text-[#B0B0B0] mb-6">
-              {isArabic
-                ? "استفسر عن خدماتنا واحصل على عروض أسعار فورية من خلال محادثتنا الذكية"
-                : "Ask about our services and get instant pricing quotes through our AI chat"}
-            </p>
-            <div className="bg-[#0A0A0A] rounded-lg p-6 min-h-64 flex items-center justify-center border border-[#2A2A2A]">
-              <p className="text-[#B0B0B0] text-center">
-                {isArabic ? "نظام الدعم الذكي قيد التطوير" : "Smart support system coming soon"}
-              </p>
-            </div>
-          </motion.div>
-        </div>
-      </section>
+	      {/* AI Customer Support Section */}
+	      <section id="ai-support" className="py-20 px-4 sm:px-6 lg:px-8">
+	        <div className="max-w-4xl mx-auto">
+	          <motion.h2
+	            initial={{ opacity: 0 }}
+	            whileInView={{ opacity: 1 }}
+	            transition={{ duration: 0.8 }}
+	            className="text-4xl font-bold text-center mb-12 bg-gradient-to-r from-[#FF006E] to-[#00D9FF] bg-clip-text text-transparent"
+	          >
+	            {isArabic ? "المساعد الإبداعي الذكي" : "Creative AI Assistant"}
+	          </motion.h2>
+	
+	          <motion.div
+	            initial={{ opacity: 0, y: 20 }}
+	            whileInView={{ opacity: 1, y: 0 }}
+	            transition={{ duration: 0.8 }}
+	          >
+	            <AIChatBox
+	              messages={chatMessages}
+	              onSendMessage={handleSendMessage}
+	              isLoading={chatMutation.isPending}
+	              height="500px"
+	              placeholder={isArabic ? "اسأل عن خدماتنا أو اطلب برومبت..." : "Ask about our services or request a prompt..."}
+	              suggestedPrompts={
+	                isArabic
+	                  ? [
+	                      "اكتب لي برومبت لصورة سيارة رياضية في دبي",
+	                      "ما هي باقات الأسعار لديكم؟",
+	                      "كيف يمكنني توليد فيديو ريلز؟",
+	                    ]
+	                  : [
+	                      "Write a prompt for a sports car in Dubai",
+	                      "What are your pricing plans?",
+	                      "How can I generate a Reels video?",
+	                    ]
+	              }
+	              className="border-[#2A2A2A] bg-[#1A1A1A]"
+	            />
+	          </motion.div>
+	        </div>
+	      </section>
 
       {/* Growth & Acquisition Section */}
       <section className="py-20 px-4 sm:px-6 lg:px-8 bg-[#1A1A1A]/50">

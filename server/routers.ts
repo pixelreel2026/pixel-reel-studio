@@ -23,6 +23,9 @@ import {
   createReview,
   getReviews,
   updateUserSubscription,
+  getMonitoringJobs,
+  createMonitoringJob,
+  updateMonitoringJob,
 } from "./db";
 import { notifyOwner } from "./_core/notification";
 import { generateImage } from "./_core/imageGeneration";
@@ -427,6 +430,66 @@ export const appRouter = router({
             message: "حدث خطأ في توليد الفيديو",
           });
         }
+      }),
+  }),
+
+  aiAssistant: router({
+    chat: protectedProcedure
+      .input(
+        z.object({
+          messages: z.array(
+            z.object({
+              role: z.enum(["system", "user", "assistant"]),
+              content: z.string(),
+            })
+          ),
+        })
+      )
+      .mutation(async ({ input }) => {
+        try {
+          const { invokeLLM } = await import("./_core/llm");
+          const response = await invokeLLM({
+            messages: [
+              {
+                role: "system",
+                content: "أنت مساعد ذكي لمنصة Pixel & Reel Studio المتخصصة في توليد الصور والفيديوهات بالذكاء الاصطناعي في الإمارات. ساعد المستخدمين في كتابة برومبتات (Prompts) احترافية، وشرح ميزات المنصة، وتقديم نصائح إبداعية. تحدث بلهجة احترافية وودودة باللغة العربية.",
+              },
+              ...input.messages,
+            ],
+          });
+
+          const aiMessage = response.choices[0].message.content;
+          return typeof aiMessage === "string" ? aiMessage : JSON.stringify(aiMessage);
+        } catch (error) {
+          console.error("AI Assistant error:", error);
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "حدث خطأ في معالجة طلب المساعد الذكي",
+          });
+        }
+      }),
+  }),
+
+  monitoring: router({
+    list: protectedProcedure.query(async ({ ctx }) => {
+      if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+      return getMonitoringJobs();
+    }),
+    create: protectedProcedure
+      .input(
+        z.object({
+          name: z.string(),
+          type: z.string(),
+          config: z.string().optional(),
+        })
+      )
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+        return createMonitoringJob({
+          name: input.name,
+          type: input.type,
+          config: input.config,
+        });
       }),
   }),
 });

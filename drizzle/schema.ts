@@ -176,3 +176,19 @@ export const reviews = mysqlTable("reviews", {
 
 export type Review = typeof reviews.$inferSelect;
 export type InsertReview = typeof reviews.$inferInsert;
+
+// Monitoring & Heartbeat
+export const monitoringJobs = mysqlTable("monitoring_jobs", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 255 }).notNull(),
+  type: varchar("type", { length: 100 }).notNull(),
+  status: varchar("status", { length: 50 }).default("active").notNull(),
+  lastRun: timestamp("lastRun"),
+  nextRun: timestamp("nextRun"),
+  config: text("config"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type MonitoringJob = typeof monitoringJobs.$inferSelect;
+export type InsertMonitoringJob = typeof monitoringJobs.$inferInsert;
